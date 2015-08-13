@@ -200,7 +200,7 @@ public class SlidingFinishLayout extends RelativeLayout implements
 
                     View type = contentView.getChildAt(i);
 
-					type.layout(0 + contentView.getWidth() * i, 0,
+					type.layout(contentView.getWidth() * i, 0,
 							type.getRight(), total - touchView.getHeight());// ScrollView
 					// 更改大小，要减去上面的TouchView的大小
 				}

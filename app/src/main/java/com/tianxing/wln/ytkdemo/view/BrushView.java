@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -32,7 +33,6 @@ public class BrushView extends View {
     private int mTarget; // 当前是第几步操作
     private boolean isUserChange; // 用户是否点击了上一步或者下一步
     private boolean isTwoFinger = false; // 是否为多点触控
-//    private Scroller mScroller; // 移动画布
 
     /*
     当第二个手指按下的时候的坐标，然后当两根手指移动的时候，此为两根手指移动过程中坐标。
@@ -53,6 +53,16 @@ public class BrushView extends View {
     int x;
     int y;
 
+    /*
+    滑动距离
+     */
+    private int maxX;
+    private int maxY;
+
+    /*
+    最大边界
+     */
+    private static final int MAX_PAINT = 1000;
 
     public BrushView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -122,6 +132,11 @@ public class BrushView extends View {
         float pointX = event.getX() + x; // 获取用户点击的X坐标
         float pointY = event.getY() + y; // 获取用户点击的Y坐标
 
+        // 如果是三根手指，return，不处理
+        if(event.getPointerCount() > 2) {
+            return true;
+        }
+
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             // 第一个手指按下
             case MotionEvent.ACTION_DOWN:
@@ -148,12 +163,41 @@ public class BrushView extends View {
                     // 画画
                     mPath.lineTo(pointX, pointY);
                 } else {
+
+
                     // 滑动
                     int moveX = (int) (lastX - event.getX());
+                    maxX += moveX;
                     int moveY = (int) (lastY - event.getY());
+                    maxY += moveY;
+                    // 如果滑动超过500，则不能在滑动
+
+                    if(maxX > MAX_PAINT && moveX > 0) {
+                        lastX = (int) event.getX();
+                        lastY = (int) event.getY();
+                            break;
+                    }
+                    if(maxX < -MAX_PAINT && moveX < 0) {
+                        lastX = (int) event.getX();
+                        lastY = (int) event.getY();
+                        break;
+                    }
+                    if(maxY < -MAX_PAINT && maxY < 0) {
+                        lastX = (int) event.getX();
+                        lastY = (int) event.getY();
+                        break;
+                    }
+                    if(maxY > MAX_PAINT && maxY > 0) {
+                        lastX = (int) event.getX();
+                        lastY = (int) event.getY();
+                        break;
+                    }
+
                     scrollBy(moveX, moveY);
+
                     lastX = (int) event.getX();
                     lastY = (int) event.getY();
+                    Log.i("tag", maxX + " and " + maxY);
 
                 }
                 break;
@@ -168,15 +212,15 @@ public class BrushView extends View {
             case MotionEvent.ACTION_UP:
 
                 // 如果是单点触控
-                if (!isTwoFinger) {
-                    Path p = new Path();
-                    p.addPath(mPath); // 把这个path添加进去
-                    mTarget += 1; // List下标+1
-                    mPaintSparseArray.add(p);
-                    if (mContext instanceof OnPaintListener) {
-                        ((OnPaintListener) mContext).onPaint();
-                    }
-                }
+//                if (!isTwoFinger) {
+//                    Path p = new Path();
+//                    p.addPath(mPath); // 把这个path添加进去
+//                    mTarget += 1; // List下标+1
+//                    mPaintSparseArray.add(p);
+//                    if (mContext instanceof OnPaintListener) {
+//                        ((OnPaintListener) mContext).onPaint();
+//                    }
+//                }
                 break;
 
             default:
@@ -210,16 +254,4 @@ public class BrushView extends View {
 
     }
 
-//    @Override
-//    public void scrollTo(int x, int y) {
-//        super.scrollTo(x, y);
-//    }
-//
-//    @Override
-//    public void computeScroll() {
-//        if (mScroller.computeScrollOffset()) {
-//            scrollTo(mScroller.getCurrX(), mScroller.getCurrY());
-//            invalidate();
-//        }
-//    }
 }
