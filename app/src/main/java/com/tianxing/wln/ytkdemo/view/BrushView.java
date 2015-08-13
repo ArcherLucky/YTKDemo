@@ -67,7 +67,6 @@ public class BrushView extends View {
     public BrushView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         this.mContext = context;
-//        mScroller = new Scroller(context);
         mBrush.setAntiAlias(true);
         mBrush.setColor(Color.BLACK);
         mBrush.setStyle(Paint.Style.STROKE);
@@ -212,15 +211,15 @@ public class BrushView extends View {
             case MotionEvent.ACTION_UP:
 
                 // 如果是单点触控
-//                if (!isTwoFinger) {
-//                    Path p = new Path();
-//                    p.addPath(mPath); // 把这个path添加进去
-//                    mTarget += 1; // List下标+1
-//                    mPaintSparseArray.add(p);
-//                    if (mContext instanceof OnPaintListener) {
-//                        ((OnPaintListener) mContext).onPaint();
-//                    }
-//                }
+                if (!isTwoFinger) {
+                    Path p = new Path();
+                    p.addPath(mPath); // 把这个path添加进去
+                    mTarget += 1; // List下标+1
+                    mPaintSparseArray.add(p);
+                    if (mContext instanceof OnPaintListener) {
+                        ((OnPaintListener) mContext).onPaint();
+                    }
+                }
                 break;
 
             default:
