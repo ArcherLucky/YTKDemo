@@ -6,9 +6,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.tianxing.wln.ytkdemo.util.ScreenUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.List;
  * 草稿纸自定义View
  * 此View有两个功能，单个手指滑动画图，两个手指滑动移动View。
  */
-public class BrushView extends View {
+public class DraftView extends View {
 
     /**
      * 当用户单手抬起的时候，则在屏幕上添加了一个Path，则上一步按钮可用。
@@ -59,12 +60,14 @@ public class BrushView extends View {
     private int maxX;
     private int maxY;
 
-    /*
-    最大边界
-     */
-    private static final int MAX_PAINT = 1000;
+    int mWidth;
+    int mHeight;
 
-    public BrushView(Context context, AttributeSet attrs, int defStyle) {
+
+    float tempClickX;
+    float tempClickY;
+
+    public DraftView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         this.mContext = context;
         mBrush.setAntiAlias(true);
@@ -76,13 +79,20 @@ public class BrushView extends View {
 
     }
 
-    public BrushView(Context context, AttributeSet attrs) {
+    public DraftView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
         // TODO Auto-generated constructor stub
     }
 
-    public BrushView(Context context) {
+    public DraftView(Context context) {
         this(context, null);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        mWidth = MeasureSpec.getSize(widthMeasureSpec) - ScreenUtils.getScreenWidth(mContext);
+        mHeight = MeasureSpec.getSize(heightMeasureSpec) - (ScreenUtils.getScreenHeight(mContext) - 75);
     }
 
     /**
@@ -93,7 +103,7 @@ public class BrushView extends View {
     public boolean lastPath() {
         isUserChange = true;
         mTarget--;
-        postInvalidate();
+        invalidate();
         return mTarget > 0;
     }
 
@@ -108,7 +118,7 @@ public class BrushView extends View {
         if (mTarget >= mPaintSparseArray.size()) {
             return false;
         }
-        postInvalidate();
+        invalidate();
         return mTarget < mPaintSparseArray.size() - 1;
     }
 
@@ -121,7 +131,7 @@ public class BrushView extends View {
         mPaintSparseArray.clear();
         mPaintSparseArray.add(new Path());
         mTarget = 0;
-        postInvalidate();
+        invalidate();
     }
 
     @Override
@@ -131,18 +141,22 @@ public class BrushView extends View {
         float pointX = event.getX() + x; // 获取用户点击的X坐标
         float pointY = event.getY() + y; // 获取用户点击的Y坐标
 
-        // 如果是三根手指，return，不处理
-        if(event.getPointerCount() > 2) {
+
+        // 如果是大于两根手指，return，不处理
+        if (event.getPointerCount() > 2) {
             return true;
         }
 
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             // 第一个手指按下
             case MotionEvent.ACTION_DOWN:
+
                 isTwoFinger = false; // 第一次按下（或者说第一根手指按下），则先认定为不是多点触控
                 mPath.moveTo(pointX, pointY);
                 clickX = event.getX();
                 clickY = event.getY();
+                tempClickX = pointX;
+                tempClickY = pointY;
                 break;
             // 第二或者更多手指按下，则认定为多点操作，不画Path，移动画布
             case MotionEvent.ACTION_POINTER_DOWN:
@@ -159,50 +173,48 @@ public class BrushView extends View {
             case MotionEvent.ACTION_MOVE:
                 // 如果是单点触控
                 if (!isTwoFinger) {
-                    // 画画
-                    mPath.lineTo(pointX, pointY);
+                    touchMove(event);
+                    invalidate();
                 } else {
-
-
                     // 滑动
                     int moveX = (int) (lastX - event.getX());
-                    maxX += moveX;
                     int moveY = (int) (lastY - event.getY());
+                    // 手指左滑动
+                    if (moveX > 0 && maxX > mWidth) {
+//                        Log.e("tag", "手指左滑动  maxX--" + maxX);
+                        moveX = 0;
+                    }
+
+                    //手指右滑动
+                    if (moveX < 0 && maxX <= 0) {
+                        moveX = 0;
+                    }
+
+                    // 手指往上滑动
+                    if (moveY > 0 && maxY >= mHeight) {
+                        moveY = 0;
+                    }
+
+                    // 手指往下滑动
+                    if (moveY < 0 && maxY <= 0) {
+                        moveY = 0;
+                    }
+
+                    maxX += moveX;
                     maxY += moveY;
-                    // 如果滑动超过500，则不能在滑动
 
-                    if(maxX > MAX_PAINT && moveX > 0) {
-                        lastX = (int) event.getX();
-                        lastY = (int) event.getY();
-                            break;
+                    if(event.getPointerCount() > 1) {
+                        scrollBy(moveX, moveY);
                     }
-                    if(maxX < -MAX_PAINT && moveX < 0) {
-                        lastX = (int) event.getX();
-                        lastY = (int) event.getY();
-                        break;
-                    }
-                    if(maxY < -MAX_PAINT && maxY < 0) {
-                        lastX = (int) event.getX();
-                        lastY = (int) event.getY();
-                        break;
-                    }
-                    if(maxY > MAX_PAINT && maxY > 0) {
-                        lastX = (int) event.getX();
-                        lastY = (int) event.getY();
-                        break;
-                    }
-
-                    scrollBy(moveX, moveY);
 
                     lastX = (int) event.getX();
                     lastY = (int) event.getY();
-                    Log.i("tag", maxX + " and " + maxY);
+
 
                 }
                 break;
 
             case MotionEvent.ACTION_POINTER_UP:
-
                 // 加上滑动距离
                 x += getScrollX();
                 y += getScrollY();
@@ -212,6 +224,11 @@ public class BrushView extends View {
 
                 // 如果是单点触控
                 if (!isTwoFinger) {
+
+                    if (mTarget == 0) {
+                        mPaintSparseArray.clear();
+                        mPaintSparseArray.add(new Path());
+                    }
                     Path p = new Path();
                     p.addPath(mPath); // 把这个path添加进去
                     mTarget += 1; // List下标+1
@@ -225,11 +242,6 @@ public class BrushView extends View {
             default:
                 return true;
         }
-        // 如果是单点触控，则更新画布
-        if (!isTwoFinger) {
-            postInvalidate();
-        }
-
         return true;
 
     }
@@ -251,6 +263,35 @@ public class BrushView extends View {
             canvas.drawPath(mPath, mBrush); // 认定用户为在屏幕上手动画Path
         }
 
+
+
+    }
+
+    //手指在屏幕上滑动时调用
+    private void touchMove(MotionEvent event) {
+        final float eventX = event.getX() + x;
+        final float eventY = event.getY() + y;
+
+        final float previousX = tempClickX;
+        final float previousY = tempClickY;
+
+        final float dx = Math.abs(eventX - previousX);
+        final float dy = Math.abs(eventY - previousY);
+
+        //两点之间的距离大于等于3时，生成贝塞尔绘制曲线
+        if (dx >= 3 || dy >= 3) {
+            //设置贝塞尔曲线的操作点为起点和终点的一半
+            float cX = (eventX + previousX) / 2;
+            float cY = (eventY + previousY) / 2;
+
+            //二次贝塞尔，实现平滑曲线；previousX, previousY为操作点，cX, cY为终点
+            mPath.quadTo(previousX, previousY, cX, cY);
+
+            //第二次执行时，第一次结束调用的坐标值将作为第二次调用的初始坐标值
+            tempClickX = eventX;
+            tempClickY = eventY;
+        }
+        invalidate();
     }
 
 }

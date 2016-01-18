@@ -1,0 +1,24 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:fitsSystemWindows="true"
+              android:orientation="vertical"
+              tools:context=".DraftActivity">
+
+    <com.tianxing.wln.ytkdemo.view.DraftView
+        android:id="@+id/brush_view"
+        android:layout_width="960dp"
+        android:layout_height="1700dp"/>
+
+
+    <!-- android:layout_weight="1" -->
+    <!--
+        <com.tianxing.wln.ytkdemo.view.PaintInvalidateRectView
+            android:id="@+id/brush_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFFFFF"/>
+    -->
+</LinearLayout>
+
